@@ -5,40 +5,6 @@
 
 ########################################################################
 [ccpp-arg-table]
-  name = samfshalcnv_init
-  type = scheme
-[imfshalcnv]
-  standard_name = control_for_shallow_convection_scheme
-  long_name = flag for mass-flux shallow convection scheme
-  units = flag
-  dimensions = ()
-  type = integer
-  intent = in
-[imfshalcnv_samf]
-  standard_name = identifier_for_scale_aware_mass_flux_shallow_convection
-  long_name = flag for SAMF shallow convection scheme
-  units = flag
-  dimensions = ()
-  type = integer
-  intent = in
-[errmsg]
-  standard_name = ccpp_error_message
-  long_name = error message for error handling in CCPP
-  units = none
-  dimensions = ()
-  type = character
-  kind = len=*
-  intent = out
-[errflg]
-  standard_name = ccpp_error_code
-  long_name = error code for error handling in CCPP
-  units = 1
-  dimensions = ()
-  type = integer
-  intent = out
-
-########################################################################
-[ccpp-arg-table]
   name = samfshalcnv_run
   type = scheme
 [im]
@@ -378,14 +344,6 @@
   standard_name = detrainment_conversion_parameter_for_shallow_convection
   long_name = convective detrainment conversion parameter for shal conv.
   units = m-1
-  dimensions = ()
-  type = real
-  kind = kind_phys
-  intent = in
-[evef]
-  standard_name = rain_evaporation_coefficient_for_convection
-  long_name = convective rain evaporation coefficient for convection
-  units = frac
   dimensions = ()
   type = real
   kind = kind_phys
