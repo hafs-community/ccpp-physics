@@ -272,6 +272,13 @@
   type = real
   kind = kind_phys
   intent = in
+[islimsk]
+  standard_name = sea_land_ice_mask
+  long_name = landmask: sea/land/ice=0/1/2
+  units = flag
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = in
 [garea]
   standard_name = cell_area
   long_name = area of the grid cell

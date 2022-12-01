@@ -209,6 +209,22 @@
   dimensions = ()
   type = integer
   intent = in
+[u10m]
+  standard_name = x_wind_at_10m
+  long_name = x component of wind at 10 m
+  units = m s-1
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
+[v10m]
+  standard_name = y_wind_at_10m
+  long_name = y component of wind at 10 m
+  units = m s-1
+  dimensions = (horizontal_loop_extent)
+  type = real
+  kind = kind_phys
+  intent = in
 [delp]
   standard_name = air_pressure_difference_between_midlayers
   long_name = pres(k) - pres(k+1)

@@ -74,7 +74,7 @@
       subroutine samfdeepcnv_run (im,km,first_time_step,restart,        &
      &    tmf,qmicro,itc,ntc,cliq,cp,cvap,                              &
      &    eps,epsm1,fv,grav,hvap,rd,rv,                                 &
-     &    t0c,delt,ntk,ntr,delp,                                        &
+     &    t0c,delt,ntk,ntr,u10m,v10m,delp,                              &
      &    prslp,psp,phil,qtr,prevsq,q,q1,t1,u1,v1,fscav,                &
      &    hwrf_samfdeep,progsigma,cldwrk,rn,kbot,ktop,kcnv,             &
      &    islimsk,garea,dot,ncloud,hpbl,ud_mf,dd_mf,dt_mf,cnvw,cnvc,    &
@@ -94,8 +94,8 @@
       real(kind=kind_phys), intent(in) :: cliq, cp, cvap, eps, epsm1,   &
      &   fv, grav, hvap, rd, rv, t0c
       real(kind=kind_phys), intent(in) ::  delt
-      real(kind=kind_phys), intent(in) :: psp(:), delp(:,:),            &
-     &   prslp(:,:),  garea(:), hpbl(:), dot(:,:), phil(:,:)
+      real(kind=kind_phys), intent(in) :: u10m(:), v10m(:), psp(:),     &
+     &   delp(:,:), prslp(:,:),  garea(:), hpbl(:), dot(:,:), phil(:,:)
       real(kind=kind_phys), dimension(:), intent(in) :: fscav
       logical, intent(in)  :: first_time_step,restart,hwrf_samfdeep,    &
      &     progsigma
@@ -204,9 +204,8 @@ cj
 cj
 !
 !  parameters for updraft velocity calculation
-      real(kind=kind_phys) bet1,    cd1,     f1,      gam1,
-!     &                     bb1,     bb2
-     &                     bb1,     bb2,     wucb
+      real(kind=kind_phys) csmf(im), ws10(im)
+      real(kind=kind_phys) bb1, bb2, csmfs, csmfl, wucb, wscrt
 !
 !  parameters for prognostic sigma closure                                                                                                                                                      
       real(kind=kind_phys) omega_u(im,km),zdqca(im,km),qlks(im,km),
@@ -237,9 +236,10 @@ c  physical parameters
       parameter(cinpcrmx=180.,cinpcrmn=120.)
 !     parameter(cinacrmx=-120.,cinacrmn=-120.)
       parameter(cinacrmx=-120.,cinacrmn=-80.)
-      parameter(bet1=1.875,cd1=.506,f1=2.0,gam1=.5)
+      parameter(bb1=4.0,bb2=0.8)
+!      parameter(csmfs=2.0,csmfl=2.0,wscrt=11.)
+      parameter(csmfs=2.0,csmfl=0.0,wscrt=11.)
       parameter(betaw=.03,dxcrtuf=15.e3)
-
 !
 !  local variables and arrays
       real(kind=kind_phys) pfld(im,km),    to(im,km),     qo(im,km),
@@ -253,7 +253,7 @@ c  variables for tracer wet deposition,
 !
 !  for updraft velocity calculation
       real(kind=kind_phys) wu2(im,km),     buo(im,km),    drag(im,km),
-     &                     wc(im)
+     &                     wush(im,km),    wc(im)
 !
 !  for updraft fraction & scale-aware function
       real(kind=kind_phys) scaldfunc(im), sigmagfm(im)
@@ -376,6 +376,8 @@ c
         rainevap(i) = 0.
         omegac(i)=0.
         gdx(i) = sqrt(garea(i))
+        csmf(i) = 0.
+        ws10(i) = sqrt(u10m(i)**2+v10m(i)**2)
       enddo
 
       do k=1,km
@@ -414,6 +416,18 @@ c
           endif
         enddo
       enddo
+!
+!>  - environmental wind shear effect parameter over land and ocean
+      do i=1,im
+        if(ws10(i) > wscrt) then
+          if(islimsk(i) == 1) then
+            csmf(i) = csmfl
+          else
+            csmf(i) = csmfs
+          endif
+        endif
+      enddo
+!
 !>  - Initialize convective cloud water and cloud cover to zero.
       do k = 1, km
         do i = 1, im
@@ -575,6 +589,7 @@ c
 !           vo(i,k)   = v1(i,k) * rcs(i)
             wu2(i,k)  = 0.
             buo(i,k)  = 0.
+            wush(i,k) = 0.
             drag(i,k) = 0.
             cnvwt(i,k)= 0.
           endif
@@ -1530,6 +1545,13 @@ c
                 buo(i,k) = buo(i,k) + grav * fv *
      &                     max(val,(qeso(i,k) - qo(i,k)))
                 drag(i,k) = max(xlamue(i,k),xlamud(i,k))
+!
+                if(ws10(i) > wscrt) then
+                  tem = ((uo(i,k)-uo(i,k-1))/dz)**2
+                  tem = tem+((vo(i,k)-vo(i,k-1))/dz)**2
+                  wush(i,k) = csmf(i) * sqrt(tem)
+                endif
+!
               endif
 !
             endif
@@ -1700,8 +1722,6 @@ c
 !  compute updraft velocity square(wu2)
 !> - Calculate updraft velocity square(wu2) according to Han et al.'s (2017) \cite han_et_al_2017 equation 7.
 !
-      bb1 = 4.0
-      bb2 = 0.8
       if (hwrf_samfdeep) then
       do i = 1, im
         if (cnvflg(i)) then
@@ -1722,11 +1742,13 @@ c
           if (cnvflg(i)) then
             if(k > kbcon1(i) .and. k < ktcon(i)) then
               dz    = zi(i,k) - zi(i,k-1)
-              tem  = 0.25 * bb1 * (drag(i,k)+drag(i,k-1)) * dz
-              tem1 = 0.5 * bb2 * (buo(i,k)+buo(i,k-1)) * dz
+              tem  = 0.25 * bb1 * (drag(i,k-1)+drag(i,k)) * dz
+              tem1 = 0.5 * bb2 * (buo(i,k-1)+buo(i,k))
+              tem2 = wush(i,k) * sqrt(wu2(i,k-1))
+              tem2 = (tem1 - tem2) * dz
               ptem = (1. - tem) * wu2(i,k-1)
               ptem1 = 1. + tem
-              wu2(i,k) = (ptem + tem1) / ptem1
+              wu2(i,k) = (ptem + tem2) / ptem1
               wu2(i,k) = max(wu2(i,k), 0.)
             endif
           endif
@@ -3519,9 +3541,13 @@ c
             if(k > kb(i) .and. k < ktop(i)) then
               tem = 0.5 * (eta(i,k-1) + eta(i,k)) * xmb(i)
               tem1 = pfld(i,k) * 100. / (rd * t1(i,k))
-              sigmagfm(i) = max(sigmagfm(i), betaw)
-              ptem = tem / (sigmagfm(i) * tem1)
-              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*sigmagfm(i)*ptem*ptem
+              if(progsigma)then
+                tem2 = sigmab(i)
+              else
+                tem2 = max(sigmagfm(i), betaw)
+              endif
+              ptem = tem / (tem2 * tem1)
+              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*tem2*ptem*ptem
             endif
           endif
         enddo
@@ -3533,9 +3559,13 @@ c
             if(k > 1 .and. k <= jmin(i)) then
               tem = 0.5*edto(i)*(etad(i,k-1)+etad(i,k))*xmb(i)
               tem1 = pfld(i,k) * 100. / (rd * t1(i,k))
-              sigmagfm(i) = max(sigmagfm(i), betaw)
-              ptem = tem / (sigmagfm(i) * tem1)
-              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*sigmagfm(i)*ptem*ptem
+              if(progsigma)then
+                tem2 = sigmab(i)
+              else
+                tem2 = max(sigmagfm(i), betaw)
+              endif
+              ptem = tem / (tem2 * tem1)
+              qtr(i,k,ntk)=qtr(i,k,ntk)+0.5*tem2*ptem*ptem
             endif
           endif
         enddo

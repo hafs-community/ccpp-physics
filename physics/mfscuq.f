@@ -12,7 +12,7 @@
       subroutine mfscuq(im,ix,km,kmscu,ntcw,ntrac1,delt,
      &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,
      &   thlx,thvx,thlvx,gdx,thetae,
-     &   krad,mrad,radmin,buo,xmfd,
+     &   krad,mrad,radmin,buo,wush,xmfd,
      &   tcdo,qcdo,ucdo,vcdo,xlamdeq,a1)
 !
       use machine , only : kind_phys
@@ -38,7 +38,7 @@
      &                     gdx(im),
      &                     zl(im,km),      zm(im,km),
      &                     thetae(im,km),  radmin(im),
-     &                     buo(im,km), xmfd(im,km),
+     &                     buo(im,km), wush(im,km), xmfd(im,km),
      &                     tcdo(im,km), qcdo(im,km,ntrac1),
      &                     ucdo(im,km), vcdo(im,km),
      &                     xlamdeq(im,km-1)
@@ -289,10 +289,12 @@ c  physical parameters
           if(cnvflg(i) .and. k < krad1(i)) then
             dz    = zm(i,k+1) - zm(i,k)
             tem  = 0.25*bb1*(xlamde(i,k)+xlamde(i,k+1))*dz
-            tem1 = bb2 * buo(i,k+1) * dz
+            tem1 = max(wd2(i,k+1), 0.)
+            tem1 = bb2*buo(i,k+1) - wush(i,k+1)*sqrt(tem1)
+            tem2 = tem1 * dz
             ptem = (1. - tem) * wd2(i,k+1)
             ptem1 = 1. + tem
-            wd2(i,k) = (ptem + tem1) / ptem1
+            wd2(i,k) = (ptem + tem2) / ptem1
           endif
         enddo
       enddo

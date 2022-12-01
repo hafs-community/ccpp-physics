@@ -11,7 +11,7 @@
 !> @{
       subroutine mfpbltq(im,ix,km,kmpbl,ntcw,ntrac1,delt,
      &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,thlx,thvx,
-     &   gdx,hpbl,kpbl,vpert,buo,xmf,
+     &   gdx,hpbl,kpbl,vpert,buo,wush,xmf,
      &   tcko,qcko,ucko,vcko,xlamueq,a1)
 !
       use machine , only : kind_phys
@@ -33,7 +33,7 @@
      &                     plyr(im,km),pix(im,km),thlx(im,km),
      &                     thvx(im,km),zl(im,km), zm(im,km),
      &                     gdx(im),    hpbl(im),  vpert(im),
-     &                     buo(im,km), xmf(im,km),
+     &                     buo(im,km), wush(im,km), xmf(im,km),
      &                     tcko(im,km),qcko(im,km,ntrac1),
      &                     ucko(im,km),vcko(im,km),
      &                     xlamueq(im,km-1)
@@ -210,11 +210,13 @@ c  local variables and arrays
         do i = 1, im
           if(cnvflg(i)) then
             dz    = zm(i,k) - zm(i,k-1)
-            tem  = 0.25*bb1*(xlamue(i,k)+xlamue(i,k-1))*dz
-            tem1 = bb2 * buo(i,k) * dz
+            tem  = 0.25*bb1*(xlamue(i,k-1)+xlamue(i,k))*dz
+            tem1 = max(wu2(i,k-1), 0.)
+            tem1 = bb2 * buo(i,k) - wush(i,k) * sqrt(tem1)
+            tem2 = tem1 * dz
             ptem = (1. - tem) * wu2(i,k-1)
             ptem1 = 1. + tem
-            wu2(i,k) = (ptem + tem1) / ptem1
+            wu2(i,k) = (ptem + tem2) / ptem1
           endif
         enddo
       enddo
