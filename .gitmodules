@@ -1,4 +1,4 @@
 [submodule "physics/rte-rrtmgp"]
   path = physics/rte-rrtmgp
   url = https://github.com/hafs-community/rte-rrtmgp
-  branch = production/hafs.v1
+  branch = support/HAFS
