@@ -12,7 +12,7 @@
       subroutine mfpbltq(im,ix,km,kmpbl,ntcw,ntrac1,delt,
      &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,thlx,thvx,
      &   gdx,hpbl,kpbl,vpert,buo,wush,tkemean,vez0fun,xmf,
-     &   tcko,qcko,ucko,vcko,xlamueq,a1)
+     &   tcko,qcko,ucko,vcko,xlamueq,a1,newshear)
 !
       use machine , only : kind_phys
       use funcphys , only : fpvs
@@ -25,6 +25,7 @@
 !
       integer              im, ix, km, kmpbl, ntcw, ntrac1
 !    &,                    me
+      integer              newshear
       integer              kpbl(im)
       logical              cnvflg(im)
       real(kind=kind_phys) delt
@@ -74,13 +75,21 @@ c  local variables and arrays
       parameter(g=grav)
       parameter(gocp=g/cp)
       parameter(elocp=hvap/cp,el2orc=hvap*hvap/(rv*cp))
-      parameter(ce0=0.4,cm=1.0,cq=1.0,tkcrt=2.,cmxfac=5.)
+!      parameter(ce0=0.4,cm=1.0,cq=1.0,tkcrt=2.,cmxfac=5.)
+      parameter(ce0=0.4,cm=1.0,cq=1.0,cmxfac=5.)
       parameter(qmin=1.e-8,qlmin=1.e-12)
       parameter(alp=1.5,vpertmax=3.0,pgcon=0.55)
       parameter(b1=0.5,f1=0.15)
 !
 !************************************************************************
 !!
+      if (newshear == 1 ) then
+        tkcrt=2.0
+      else
+        tkcrt=99999.0
+      endif
+
+
       totflg = .true.
       do i=1,im
         totflg = totflg .and. (.not. cnvflg(i))

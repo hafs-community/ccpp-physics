@@ -698,6 +698,13 @@
   type = real
   kind = kind_phys
   intent = out
+[newshear]
+  standard_name = choice_of_using_updated_shear_effects_in_TKE_EDMF_and_SAS
+  long_name = choice of using updated shear effects in TKE EDMF and SAS
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
 [errmsg]
   standard_name = ccpp_error_message
   long_name = error message for error handling in CCPP

@@ -13,7 +13,7 @@
      &   cnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,
      &   thlx,thvx,thlvx,gdx,thetae,
      &   krad,mrad,radmin,buo,wush,tkemean,vez0fun,xmfd,
-     &   tcdo,qcdo,ucdo,vcdo,xlamdeq,a1)
+     &   tcdo,qcdo,ucdo,vcdo,xlamdeq,a1,newshear)
 !
       use machine , only : kind_phys
       use funcphys , only : fpvs
@@ -26,6 +26,7 @@
 !
       integer            im, ix,  km, kmscu, ntcw, ntrac1
 !    &,                  me
+      integer            newshear
       integer   krad(im), mrad(im)
 !
       logical cnvflg(im)
@@ -83,7 +84,8 @@ c  physical parameters
       parameter(gocp=g/cp)
       parameter(elocp=hvap/cp,el2orc=hvap*hvap/(rv*cp))
       parameter(ce0=0.4,cm=1.0,cq=1.0,pgcon=0.55)
-      parameter(tkcrt=2.,cmxfac=5.)
+!      parameter(tkcrt=2.,cmxfac=5.)
+      parameter(cmxfac=5.)
       parameter(qmin=1.e-8,qlmin=1.e-12)
       parameter(b1=0.45,f1=0.15)
       parameter(a2=0.5)
@@ -93,6 +95,12 @@ c  physical parameters
 !
 !************************************************************************
 !!
+      if (newshear == 1 ) then
+          tkcrt=2.0
+      else
+          tkcrt=99999.0
+      endif
+
       totflg = .true.
       do i=1,im
         totflg = totflg .and. (.not. cnvflg(i))

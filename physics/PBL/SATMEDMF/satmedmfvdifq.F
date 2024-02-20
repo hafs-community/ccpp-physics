@@ -82,7 +82,7 @@
      &     prsi,del,prsl,prslk,phii,phil,delt,                          &
      &     dspheat,dusfc,dvsfc,dtsfc,dqsfc,hpbl,dkt,dku,                &
      &     kinver,xkzm_m,xkzm_h,xkzm_s,dspfac,bl_upfr,bl_dnfr,          &
-     &     rlmx,elmx,sfc_rlm,tc_pbl,                                    &
+     &     rlmx,elmx,sfc_rlm,tc_pbl,newshear,                           &
      &     ntqv,dtend,dtidx,index_of_temperature,index_of_x_wind,       &
      &     index_of_y_wind,index_of_process_pbl,gen_tend,ldiag3d,       &
      &     errmsg,errflg)
@@ -97,6 +97,7 @@
      &                        ntke, ntqv
       integer, intent(in)  :: sfc_rlm
       integer, intent(in)  :: tc_pbl
+      integer, intent(in)  :: newshear
       integer, intent(in)  :: kinver(:)
       integer, intent(out) :: kpbl(:)
       logical, intent(in)  :: gen_tend,ldiag3d
@@ -279,8 +280,15 @@
       parameter(vegflo=0.1,vegfup=1.0,z0lo=0.1,z0up=1.0)
       parameter(vc0=1.0,zc0=1.0)
       parameter(ck1=0.15,ch1=0.15)
-      parameter(cs0=0.4,csmf=0.5)
+!      parameter(cs0=0.4,csmf=0.5)
       parameter(rchck=1.5,ndt=20)
+
+      cs0=0.4
+      csmf=0.5
+      if(newshear == 0) then
+       cs0=0.2
+       csmf=0.0
+      endif
 
       if (tc_pbl == 0) then
         ck0 = 0.4
@@ -457,6 +465,7 @@
         ptem = (z0(i) - z0lo) / (z0up - z0lo)
         ptem = min(max(ptem, 0.), 1.)
         vez0fun(i) = (1. + vc0 * tem1) * (1. + zc0 * ptem)
+        if ( newshear == 0) vez0fun(i)=1.0
       enddo
 !
 !>  - Compute \f$\theta\f$(theta), and \f$q_l\f$(qlx), \f$\theta_e\f$(thetae),
@@ -1014,14 +1023,14 @@
       call mfpbltq(im,im,km,kmpbl,ntcw,ntrac1,dt2,
      &    pcnvflg,zl,zm,q1,t1,u1,v1,plyr,pix,thlx,thvx,
      &    gdx,hpbl,kpbl,vpert,buou,wush,tkemean,vez0fun,xmf,
-     &    tcko,qcko,ucko,vcko,xlamue,bl_upfr)
+     &    tcko,qcko,ucko,vcko,xlamue,bl_upfr,newshear)
 !>  - Call mfscuq(), which is a new mass-flux parameterization for 
 !!    stratocumulus-top-induced turbulence mixing. For details of the mfscuq subroutine, step into its documentation ::mfscuq
       call mfscuq(im,im,km,kmscu,ntcw,ntrac1,dt2,
      &    scuflg,zl,zm,q1,t1,u1,v1,plyr,pix,
      &    thlx,thvx,thlvx,gdx,thetae,
      &    krad,mrad,radmin,buod,wush,tkemean,vez0fun,xmfd,
-     &    tcdo,qcdo,ucdo,vcdo,xlamde,bl_dnfr)
+     &    tcdo,qcdo,ucdo,vcdo,xlamde,bl_dnfr,newshear)
 
       if (tc_pbl == 1) then
 !>  - unify mass fluxes with Cu

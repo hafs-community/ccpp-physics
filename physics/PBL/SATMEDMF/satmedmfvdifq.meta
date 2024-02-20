@@ -611,6 +611,13 @@
   dimensions = ()
   type = integer
   intent = in
+[newshear]
+  standard_name = choice_of_using_updated_shear_effects_in_TKE_EDMF_and_SAS
+  long_name = choice of using updated shear effects in TKE EDMF and SAS
+  units = none
+  dimensions = ()
+  type = integer
+  intent = in
 [ntqv]
   standard_name = index_of_specific_humidity_in_tracer_concentration_array
   long_name = tracer index for water vapor (specific humidity)

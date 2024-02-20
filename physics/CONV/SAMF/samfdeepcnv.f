@@ -84,7 +84,7 @@
      &    clam,c0s,c1,betal,betas,evef,pgcon,asolfac,                   &
      &    do_ca, ca_closure, ca_entr, ca_trigger, nthresh,ca_deep,      &
      &    rainevap,sigmain,sigmaout,betadcu,betamcu,betascu,            &
-     &    maxMF, do_mynnedmf,errmsg,errflg)
+     &    maxMF, do_mynnedmf,newshear,errmsg,errflg)
 !
       use machine , only : kind_phys
       use funcphys , only : fpvs
@@ -117,6 +117,7 @@
      &   cnvw(:,:),  cnvc(:,:)
 
       integer, intent(out) :: kbot(:), ktop(:)
+      integer, intent(in)  ::  newshear
       real(kind=kind_phys), intent(out) :: cldwrk(:),                   &
      &   rn(:),                                                         &
      &   ud_mf(:,:),dd_mf(:,:), dt_mf(:,:)
@@ -242,8 +243,10 @@ c  physical parameters
       parameter(cinpcrmx=180.,cinpcrmn=120.)
 !     parameter(cinacrmx=-120.,cinacrmn=-120.)
       parameter(cinacrmx=-120.,cinacrmn=-80.)
-      parameter(bb1=4.0,bb2=0.8,csmf=0.2)
-      parameter(tkcrt=2.,cmxfac=15.)
+!      parameter(bb1=4.0,bb2=0.8,csmf=0.2)
+!      parameter(tkcrt=2.,cmxfac=15.)
+      parameter(bb1=4.0,bb2=0.8)
+      parameter(cmxfac=15.)
       parameter(betaw=.03)
 
 !
@@ -306,6 +309,14 @@ c     data acritt/.203,.515,.521,.566,.625,.665,.659,.688,
 c    &            .743,.813,.886,.947,1.138,1.377,1.896/
       real(kind=kind_phys) tf, tcr, tcrf
       parameter (tf=233.16, tcr=263.16, tcrf=1.0/(tcr-tf))
+
+       if (newshear == 0) then
+          csmf=0.0
+          tkcrt=99999.0
+       else
+          csmf=0.2
+          tkcrt=2.0
+       endif
 
       ! Initialize CCPP error handling variables
       errmsg = ''
