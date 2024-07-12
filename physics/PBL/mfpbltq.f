@@ -74,7 +74,7 @@ c  local variables and arrays
       parameter(g=grav)
       parameter(gocp=g/cp)
       parameter(elocp=hvap/cp,el2orc=hvap*hvap/(rv*cp))
-      parameter(ce0=0.4,cm=1.0,cq=1.0,tkcrt=2.,cmxfac=5.)
+      parameter(ce0=0.43,cm=1.0,cq=1.0,tkcrt=2.,cmxfac=5.)
       parameter(qmin=1.e-8,qlmin=1.e-12)
       parameter(alp=1.5,vpertmax=3.0,pgcon=0.55)
       parameter(b1=0.5,f1=0.15)
