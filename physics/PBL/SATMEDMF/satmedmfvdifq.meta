@@ -256,6 +256,22 @@
   type = real
   kind = kind_phys
   intent = in
+[def_1]
+  standard_name = shear_prod
+  long_name = 3D shear production
+  units =  m2 s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
+[def_2]
+  standard_name = TKE_transfer
+  long_name = TKE transfer and pressure correlation
+  units =  m2 s-2
+  dimensions = (horizontal_loop_extent,vertical_layer_dimension)
+  type = real
+  kind = kind_phys
+  intent = in
 [swh]
   standard_name = tendency_of_air_temperature_due_to_shortwave_heating_on_radiation_timestep
   long_name = total sky shortwave heating rate
@@ -466,6 +482,13 @@
 [dspheat]
   standard_name = flag_TKE_dissipation_heating
   long_name = flag for using TKE dissipation heating
+  units = flag
+  dimensions = ()
+  type = logical
+  intent = in
+[sa3dtke]
+  standard_name = flag_sa_3d_tke_scheme
+  long_name = flag for scale-aware 3d tke scheme
   units = flag
   dimensions = ()
   type = logical
