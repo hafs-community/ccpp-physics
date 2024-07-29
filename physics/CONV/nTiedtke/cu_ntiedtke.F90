@@ -2176,7 +2176,7 @@ contains
           jl = jlx(jll)
           zdmfde(jl) = min(zdmfde(jl),0.75*pmfu(jl,jk+1))
           if ( jk == kcbot(jl) ) then
-            zoentr(jl) = -1.75e-3*(min(1.,pqen(jl,jk)/pqsen(jl,jk)) - & 
+            zoentr(jl) = -2.50e-3*(min(1.,pqen(jl,jk)/pqsen(jl,jk)) - & 
                          1.)*(pgeoh(jl,jk)-pgeoh(jl,jk+1))*zrg
             zoentr(jl) = min(0.4,zoentr(jl))*pmfu(jl,jk+1)
           end if
@@ -2300,7 +2300,7 @@ contains
               end if
               if ( zbuo(jl,jk) > -0.2  ) then
                 ikb = kcbot(jl)
-                zoentr(jl) = 1.75e-3*(0.3-(min(1.,pqen(jl,jk-1) /    & 
+                zoentr(jl) = 2.50e-3*(0.3-(min(1.,pqen(jl,jk-1) /    & 
                   pqsen(jl,jk-1))-1.))*(pgeoh(jl,jk-1)-pgeoh(jl,jk)) * &
                   zrg*min(1.,pqsen(jl,jk)/pqsen(jl,ikb))**3
                 zoentr(jl) = min(0.4,zoentr(jl))*pmfu(jl,jk)
