@@ -266,7 +266,7 @@
      &                     dku_h(im,km),dkq_h(im,km),dddmp,
      &                     cpl1,cpl2,cpl3,cpl4,
      &                     cpl5,cpl6,pfnl(im),cpnl1,cpnl2,cpnl3,cpnl4,
-     &                     cpnl5,cpnl6,cptke1,cptke2,cptke3,shrp3d
+     &                     cpnl5,cpnl6,cptke1,cptke2,cptke3
 
       real(kind=kind_phys) ak(im,km),bk(im,km),ck(im,km),pk(im,km),
      &                     f3(im,km),rizt(im,km)
@@ -501,20 +501,15 @@
 !
 !>  - Compute \f$\theta\f$(theta), and \f$q_l\f$(qlx), \f$\theta_e\f$(thetae),
 !! \f$\theta_v\f$(thvx),\f$\theta_{l,v}\f$ (thlvx) including ice water 
-      do k=1,km
+!The following is for SA-3D-TKE
+      if(sa3dtke) then
+       do k=1,km
         do i=1,im
           pix(i,k)   = psk(i) / prslk(i,k)
           theta(i,k) = t1(i,k) * pix(i,k)
           if(ntiw > 0) then
             tem = max(q1(i,k,ntcw),qlmin)
-!The following is for SA-3D-TKE
-           if(sa3dtke) then
-!       include snow in the buoyancy calculation
             tem1 = max(q1(i,k,ntiw)+q1(i,k,5)+q1(i,k,6),qlmin)
-           else
-            tem1 = max(q1(i,k,ntiw),qlmin)
-           endif
-!
             qlx(i,k) = tem + tem1
             ptem = hvap*tem + (hvap+hfus)*tem1
             slx(i,k)   = cp * t1(i,k) + phil(i,k) - ptem
@@ -534,7 +529,36 @@
 !         gotvx(i,k) = g / tvx(i,k)
           gotvx(i,k) = g / thvx(i,k)
         enddo
-      enddo
+       enddo
+      else
+       do k=1,km
+        do i=1,im
+          pix(i,k)   = psk(i) / prslk(i,k)
+          theta(i,k) = t1(i,k) * pix(i,k)
+          if(ntiw > 0) then
+            tem = max(q1(i,k,ntcw),qlmin)
+            tem1 = max(q1(i,k,ntiw),qlmin)
+            qlx(i,k) = tem + tem1
+            ptem = hvap*tem + (hvap+hfus)*tem1
+            slx(i,k)   = cp * t1(i,k) + phil(i,k) - ptem
+          else
+            qlx(i,k) = max(q1(i,k,ntcw),qlmin)
+            slx(i,k)   = cp * t1(i,k) + phil(i,k) - hvap*qlx(i,k)
+          endif
+          tem2       = 1.+fv*max(q1(i,k,1),qmin)-qlx(i,k)
+          thvx(i,k)  = theta(i,k) * tem2
+          tvx(i,k)   = t1(i,k) * tem2
+          qtx(i,k) = max(q1(i,k,1),qmin)+qlx(i,k)
+          thlx(i,k)  = theta(i,k) - pix(i,k)*elocp*qlx(i,k)
+          thlvx(i,k) = thlx(i,k) * (1. + fv * qtx(i,k))
+          svx(i,k)   = cp * tvx(i,k)
+          ptem1      = elocp * pix(i,k) * max(q1(i,k,1),qmin)
+          thetae(i,k)= theta(i,k) +  ptem1
+!         gotvx(i,k) = g / tvx(i,k)
+          gotvx(i,k) = g / thvx(i,k)
+        enddo
+       enddo
+      endif !sa3dtke
 
 !>  - Compute an empirical cloud fraction based on 
 !! Xu and Randall (1996) \cite xu_and_randall_1996
@@ -1160,7 +1184,8 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !> ## Compute an asymtotic mixing length
 !
-      do k = 1, km1
+      if(sa3dtke) then
+       do k = 1, km1
         do i = 1, im
           zlup = 0.0
           mlenflg = .true.
@@ -1169,11 +1194,7 @@
             if(mlenflg) then
               dz = zl(i,n+1) - zl(i,n)
               tem1 = 2.*gotvx(i,n+1)*(thvx(i,k)-thvx(i,n+1))
-             if(sa3dtke) then
               tem2 = cs0*sqrt(e2(i,n))*sqrt(def_1(i,n)+def_2(i,n))
-             else
-              tem2 = cs0*sqrt(e2(i,n))*sqrt(shr2(i,n))
-             endif
               e2(i,n+1) = e2(i,n) + (tem1 - tem2) * dz
               zlup = zlup + dz
               if(e2(i,n+1) < 0.) then
@@ -1198,12 +1219,8 @@
               else
                 dz = zl(i,n) - zl(i,n-1)
                 tem1 = 2.*gotvx(i,n-1)*(thvx(i,n-1)-thvx(i,k))
-               if(sa3dtke) then
                 tem2 = cs0*sqrt(e2(i,n))*
      &                 sqrt(def_1(i,n-1)+def_2(i,n-1))
-               else
-                tem2 = cs0*sqrt(e2(i,n))*sqrt(shr2(i,n-1))
-               endif
                 e2(i,n-1) = e2(i,n) + (tem1 - tem2) * dz
               endif
               zldn = zldn + dz
@@ -1245,7 +1262,87 @@
           ele(i,k) = min(ele(i,k), elmx)
 !
         enddo
-      enddo
+       enddo
+      else
+       do k = 1, km1
+        do i = 1, im
+          zlup = 0.0
+          mlenflg = .true.
+          e2(i,k) = max(2.*tke(i,k), 0.001)
+          do n = k, km1
+            if(mlenflg) then
+              dz = zl(i,n+1) - zl(i,n)
+              tem1 = 2.*gotvx(i,n+1)*(thvx(i,k)-thvx(i,n+1))
+              tem2 = cs0*sqrt(e2(i,n))*sqrt(shr2(i,n))
+              e2(i,n+1) = e2(i,n) + (tem1 - tem2) * dz
+              zlup = zlup + dz
+              if(e2(i,n+1) < 0.) then
+                ptem = e2(i,n+1) / (e2(i,n+1) - e2(i,n))
+                zlup = zlup - ptem * dz
+                zlup = max(zlup, 0.)
+                mlenflg = .false.
+              endif
+            endif
+          enddo
+          zldn = 0.0
+          mlenflg = .true.
+          do n = k, 1, -1
+            if(mlenflg) then
+              if(n == 1) then
+                dz = zl(i,1)
+                tem = tsea(i)*(1.+fv*max(q1(i,1,1),qmin))
+                tem1 = 2.*gotvx(i,n)*(tem-thvx(i,k))
+                tem2 = ustar(i)*phims(i)/(vk*dz)
+                tem2 = cs0*sqrt(e2(i,n))*tem2
+                e2(i,n-1) = e2(i,n) + (tem1 - tem2) * dz
+              else
+                dz = zl(i,n) - zl(i,n-1)
+                tem1 = 2.*gotvx(i,n-1)*(thvx(i,n-1)-thvx(i,k))
+                tem2 = cs0*sqrt(e2(i,n))*sqrt(shr2(i,n-1))
+                e2(i,n-1) = e2(i,n) + (tem1 - tem2) * dz
+              endif
+              zldn = zldn + dz
+              if(e2(i,n-1) < 0.) then
+                ptem = e2(i,n-1) / (e2(i,n-1) - e2(i,n))
+                zldn = zldn - ptem * dz
+                zldn = max(zldn, 0.)
+                mlenflg = .false.
+              endif
+            endif
+          enddo
+!
+          tem = 0.5 * (zi(i,k+1)-zi(i,k))
+          tem1 = min(tem, rlmnz(i,k))
+!>  - Following Bougeault and Lacarrere(1989), the characteristic length
+!! scale (\f$l_2\f$) (eqn 10 in Han et al.(2019) \cite Han_2019) is given by:
+!!\f[
+!!   l_2=min(l_{up},l_{down})
+!!\f]
+!! and dissipation length scale \f$l_d\f$ is given by:
+!!\f[
+!!   l_d=(l_{up}l_{down})^{1/2}
+!!\f]
+!!    where \f$l_{up}\f$ and \f$l_{down}\f$ are the distances that a parcel
+!! having an initial TKE can travel upward and downward before being stopped
+!! by buoyancy effects.
+!
+! Following Rodier et. al (2017), environmental wind shear effect on
+!   mixing length was included.
+!
+          ptem2 = min(zlup,zldn)
+          rlam(i,k) = elmfac * ptem2
+          rlam(i,k) = max(rlam(i,k), tem1)
+          rlam(i,k) = min(rlam(i,k), rlmx)
+!
+          ptem2 = sqrt(zlup*zldn)
+          ele(i,k) = elefac * ptem2
+          ele(i,k) = max(ele(i,k), tem1)
+          ele(i,k) = min(ele(i,k), elmx)
+!
+        enddo
+       enddo
+      endif !sa3dtke
+
 !>  - Compute the surface layer length scale (\f$l_1\f$) following 
 !! Nakanishi (2001) \cite Nakanish_2001 (eqn 9 of Han et al.(2019) \cite Han_2019)
       do k = 1, km1
@@ -1298,15 +1395,12 @@
 !> ## Compute vertical eddy diffusivities
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-      do k = 1, km1
+      if(sa3dtke) then
+       do k = 1, km1
         do i = 1, im
            tem = 0.5 * (elm(i,k) + elm(i,k+1))
            tem = tem * sqrt(tkeh(i,k))
-          if(sa3dtke) then
            ri = max(bf(i,k)/(def_1(i,k)+def_2(i,k)),rimin)
-          else
-           ri = max(bf(i,k)/shr2(i,k),rimin)
-          endif
            if(k < kpbl(i)) then
              if(pcnvflg(i)) then
                dku(i,k) = ckz(i,k) * tem
@@ -1351,7 +1445,59 @@
            dku(i,k) = max(dku(i,k),xkzmo(i,k))
 !
         enddo
-      enddo
+       enddo
+      else
+       do k = 1, km1
+        do i = 1, im
+           tem = 0.5 * (elm(i,k) + elm(i,k+1))
+           tem = tem * sqrt(tkeh(i,k))
+           ri = max(bf(i,k)/shr2(i,k),rimin)
+           if(k < kpbl(i)) then
+             if(pcnvflg(i)) then
+               dku(i,k) = ckz(i,k) * tem
+               dkt(i,k) = dku(i,k) / prn(i,k)
+             else
+               if(ri < 0.) then ! unstable regime
+                 dku(i,k) = ckz(i,k) * tem
+                 dkt(i,k) = dku(i,k) / prn(i,k)
+               else             ! stable regime
+                 dkt(i,k) = chz(i,k) * tem
+                 dku(i,k) = dkt(i,k) * prn(i,k)
+               endif
+             endif
+           else
+              if(ri < 0.) then ! unstable regime
+                dku(i,k) = ck1 * tem
+                dkt(i,k) = rchck * dku(i,k)
+              else             ! stable regime
+                dkt(i,k) = ch1 * tem
+                prnum = 1.0 + 2.1 * ri
+                prnum = min(prnum,prmax)
+                dku(i,k) = dkt(i,k) * prnum
+              endif
+           endif
+!
+           if(scuflg(i)) then
+             if(k >= mrad(i) .and. k < krad(i)) then
+                tem1 = ckz(i,k) * tem
+                ptem1 = tem1 / prscu
+                dku(i,k) = max(dku(i,k), tem1)
+                dkt(i,k) = max(dkt(i,k), ptem1)
+             endif
+           endif
+!
+           dkq(i,k) = prtke * dkt(i,k)
+!
+           dkt(i,k) = min(dkt(i,k),dkmax)
+           dkt(i,k) = max(dkt(i,k),xkzo(i,k))
+           dkq(i,k) = min(dkq(i,k),dkmax)
+           dkq(i,k) = max(dkq(i,k),xkzo(i,k))
+           dku(i,k) = min(dku(i,k),dkmax)
+           dku(i,k) = max(dku(i,k),xkzmo(i,k))
+!
+        enddo
+       enddo
+      endif !sa3dtke
 
 !The following is for SA-3D-TKE
       if(sa3dtke) then
@@ -1498,7 +1644,8 @@
 !>  - Compute buoyancy and shear productions of TKE 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !
-      do k = 1, km1
+      if(sa3dtke) then
+       do k = 1, km1
         do i = 1, im
           if (k == 1) then
             tem = -dkt(i,1) * bf(i,1)
@@ -1515,11 +1662,90 @@
             tem = tem + ptem1 + ptem2
             buop = 0.5 * (gotvx(i,1) * sflux(i) + tem)
 !
-            if(sa3dtke) then
-             tem1 = dku(i,1) * (def_1(i,1)+def_2(i,1))
-            else        
-             tem1 = dku(i,1) * shr2(i,1)
+            tem = (u1(i,2)-u1(i,1))*rdzt(i,1)
+!           if(pcnvflg(i)) then
+!             ptem = xmf(i,1) * tem
+!             ptem1 = 0.5 * ptem * (u1(i,2)-ucko(i,2))
+!           else
+              ptem1 = 0.
+!           endif
+            if(scuflg(i) .and. mrad(i) == 1) then
+              ptem = ucdo(i,1)+ucdo(i,2)-u1(i,1)-u1(i,2)
+              ptem = 0.5 * tem * xmfd(i,1) * ptem
+            else
+              ptem = 0.
             endif
+            ptem1 = ptem1 + ptem
+!
+            tem = (v1(i,2)-v1(i,1))*rdzt(i,1)
+!           if(pcnvflg(i)) then
+!             ptem = xmf(i,1) * tem
+!             ptem2 = 0.5 * ptem * (v1(i,2)-vcko(i,2))
+!           else
+              ptem2 = 0.
+!           endif
+            if(scuflg(i) .and. mrad(i) == 1) then
+              ptem = vcdo(i,1)+vcdo(i,2)-v1(i,1)-v1(i,2)
+              ptem = 0.5 * tem * xmfd(i,1) * ptem
+            else
+              ptem = 0.
+            endif
+            ptem2 = ptem2 + ptem
+!
+            tem2 = stress(i)*ustar(i)*phims(i)/(vk*zl(i,1))
+            shrp = 0.5 * (ptem1 + ptem2 + tem2)
+            tem2 = dku(i,k)*def_1(i,k)+dku_h(i,k)*def_2(i,k)
+            shrp =0.5*(shrp+tem2)
+          else
+            tem1 = -dkt(i,k-1) * bf(i,k-1)
+            tem2 = -dkt(i,k) * bf(i,k)
+            tem  = 0.5 * (tem1 + tem2)
+            if(pcnvflg(i) .and. k <= kpbl(i)) then
+              ptem = 0.5 * (xmf(i,k-1) + xmf(i,k))
+              ptem1 = ptem * buou(i,k)
+            else
+              ptem1 = 0.
+            endif
+            if(scuflg(i)) then
+              if(k >= mrad(i) .and. k < krad(i)) then
+                ptem0 = 0.5 * (xmfd(i,k-1) + xmfd(i,k))
+                ptem2 = ptem0 * buod(i,k)
+              else
+                ptem2 = 0.
+              endif
+            else
+              ptem2 = 0.
+            endif
+            buop = tem + ptem1 + ptem2
+!
+!         obtaining 3d shear production from dycore
+            tem1 = dku(i,k-1)*def_1(i,k-1)+dku_h(i,k-1)*def_2(i,k-1) 
+            tem2 = dku(i,k)*def_1(i,k)+dku_h(i,k)*def_2(i,k) 
+            shrp=0.5*(tem1+tem2)
+          endif
+!
+          prod(i,k) = buop + shrp
+        enddo
+       enddo
+      else
+       do k = 1, km1
+        do i = 1, im
+          if (k == 1) then
+            tem = -dkt(i,1) * bf(i,1)
+!           if(pcnvflg(i)) then
+!             ptem1 = xmf(i,1) * buou(i,1)
+!           else
+              ptem1 = 0.
+!           endif
+            if(scuflg(i) .and. mrad(i) == 1) then
+              ptem2 = xmfd(i,1) * buod(i,1)
+            else
+              ptem2 = 0.
+            endif
+            tem = tem + ptem1 + ptem2
+            buop = 0.5 * (gotvx(i,1) * sflux(i) + tem)
+!
+            tem1 = dku(i,1) * shr2(i,1)
 !
             tem = (u1(i,2)-u1(i,1))*rdzt(i,1)
 !           if(pcnvflg(i)) then
@@ -1575,13 +1801,8 @@
             endif
             buop = tem + ptem1 + ptem2
 !
-            if(sa3dtke) then
-             tem1 = dku(i,k-1) * (def_1(i,k-1)+def_2(i,k-1))
-             tem2 = dku(i,k) * (def_1(i,k)+def_2(i,k))
-            else
-             tem1 = dku(i,k-1) * shr2(i,k-1)
-             tem2 = dku(i,k) * shr2(i,k)
-            endif
+            tem1 = dku(i,k-1) * shr2(i,k-1)
+            tem2 = dku(i,k) * shr2(i,k)
             tem  = 0.5 * (tem1 + tem2)
             tem1 = (u1(i,k+1)-u1(i,k))*rdzt(i,k)
             tem2 = (u1(i,k)-u1(i,k-1))*rdzt(i,k-1)
@@ -1622,34 +1843,21 @@
             endif
             shrp = shrp + ptem1 + ptem2
           endif
-
-!The following is for SA-3D-TKE
-          if(sa3dtke) then
-!         obtaining 3d shear production from dycore
-           if (k ==1) then
-            shrp3d=dku(i,k)*def_1(i,k)+dku_h(i,k)*def_2(i,k)
-           else
-            tem1 = dku(i,k-1)*def_1(i,k-1)+dku_h(i,k-1)*def_2(i,k-1) 
-            tem2 = dku(i,k)*def_1(i,k)+dku_h(i,k)*def_2(i,k) 
-            shrp3d=0.5*(tem1+tem2)
-           endif
-           shrp=shrp3d
-          endif !sa3dtke
-!
           prod(i,k) = buop + shrp
         enddo
-      enddo
+       enddo
+      endif !sa3dtke
 !
 !----------------------------------------------------------------------
 !>  - First predict tke due to tke production & dissipation(diss)  
 !
-      dtn = dt2 / float(ndt)
-      do n = 1, ndt
-      do k = 1,km1
+      if(sa3dtke) then
+!The following is for SA-3D-TKE
+       dtn = dt2 / float(ndt)
+       do n = 1, ndt
+       do k = 1,km1
         do i=1,im
           tem = sqrt(tke(i,k))
-!The following is for SA-3D-TKE
-          if(sa3dtke) then
 !        calculating 3D TKE transport and pressure correlation
            ptem1 = ce0 / ele(i,k)
            tem1=(garea(i)*dz)**(1.0/3.0)
@@ -1662,19 +1870,28 @@
            tem=2.0*def_3(i,k)
            tem=min(tem,1.0)
            tke(i,k) = tke(i,k) + dtn * (prod(i,k)-diss(i,k)+tem)
-          else
+!          tke(i,k) = max(tke(i,k), tkmin)
+           tke(i,k) = max(tke(i,k), tkmnz(i,k))
+        enddo
+       enddo
+       enddo
+      else
+       dtn = dt2 / float(ndt)
+       do n = 1, ndt
+       do k = 1,km1
+        do i=1,im
+           tem = sqrt(tke(i,k))
            ptem = ce0 / ele(i,k)
            diss(i,k) = ptem * tke(i,k) * tem
            tem1 = prod(i,k) + tke(i,k) / dtn
            diss(i,k)=max(min(diss(i,k), tem1), 0.)
            tke(i,k) = tke(i,k) + dtn * (prod(i,k)-diss(i,k))
-          endif !sa3dtke                  
-!
 !          tke(i,k) = max(tke(i,k), tkmin)
            tke(i,k) = max(tke(i,k), tkmnz(i,k))
         enddo
-      enddo
-      enddo
+       enddo
+       enddo
+      endif !sa3dtke
 !
 !>  - Compute updraft & downdraft properties for TKE
 !
