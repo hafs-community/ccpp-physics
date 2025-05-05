@@ -448,7 +448,6 @@
   type = real
   kind = kind_phys
   intent = in
-  optional = True
 [oc1ss]
   standard_name = convexity_of_subgrid_orography_small_scale
   long_name = convexity of subgrid height_above_mean_sea_level small scale
@@ -457,7 +456,6 @@
   type = real
   kind = kind_phys
   intent = in
-  optional = True
 [oa4ss]
   standard_name = asymmetry_of_subgrid_orography_small_scale
   long_name = asymmetry of subgrid height_above_mean_sea_level small scale
@@ -466,7 +464,6 @@
   type = real
   kind = kind_phys
   intent = in
-  optional = True
 [ol4ss]
   standard_name = fraction_of_grid_box_with_subgrid_orography_higher_than_critical_height_small_scale
   long_name = horizontal fraction of grid box covered by subgrid height_above_mean_sea_level higher than critical height small scale
@@ -475,7 +472,6 @@
   type = real
   kind = kind_phys
   intent = in
-  optional = True
 [dx]
   standard_name = characteristic_grid_lengthscale
   long_name = size of the grid cell
@@ -671,6 +667,13 @@
   type = real
   kind = kind_phys
   intent = in
+[vtype]
+  standard_name = vegetation_type_classification
+  long_name = vegetation type for lsm
+  units = index
+  dimensions = (horizontal_loop_extent)
+  type = integer
+  intent = in
 [slmsk]
   standard_name = area_type
   long_name = landmask: sea/land/ice=0/1/2
@@ -705,6 +708,14 @@
   long_name = multiplication factors for cdmb and gwd
   units = none
   dimensions = (4)
+  type = real
+  kind = kind_phys
+  intent = in
+[alpha_fd]
+  standard_name = alpha_coefficient_for_turbulent_orographic_form_drag
+  long_name = alpha coefficient for Beljaars et al turbulent orographic form drag
+  units = 1
+  dimensions = ()
   type = real
   kind = kind_phys
   intent = in
@@ -1221,6 +1232,21 @@
   dimensions = ()
   type = logical
   intent = in
+[do_gwd_opt_psl]
+  standard_name = do_gsl_drag_suite_with_psl_gwd_option
+  long_name = flag to activate PSL drag suite - mesoscale GWD and blocking
+  units = flag 
+  dimensions = () 
+  type = logical
+  intent = in 
+[psl_gwd_dx_factor]
+  standard_name = effective_grid_spacing_of_psl_gwd_suite
+  long_name = multiplication of grid spacing
+  units = 1
+  dimensions = () 
+  type = real 
+  kind = kind_phys
+  intent = in 
 [gwd_opt]
   standard_name = control_for_drag_suite_gravity_wave_drag
   long_name = flag to choose gwd scheme
