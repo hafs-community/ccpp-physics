@@ -2135,6 +2135,9 @@ contains
       real(kind=kind_phys),dimension(klon):: zph,zdmfen,zdmfde,zmfuu,zmfuv,zpbase,zqold,zluold,zprecip
       real(kind=kind_phys),dimension(klon,klev):: zlrain,zbuo,kup,zodetr,pdmfen
 
+      real(kind=kind_phys),parameter:: c1 = 5.0e-4  !shin
+      real(kind=kind_phys),parameter:: d1 = 1.0e-3  !shin
+      integer,parameter:: icu_zoentr = 2            !shin
     !--------------------------------
     !*    1. specify parameters
     !--------------------------------
@@ -2271,9 +2274,14 @@ contains
           ! Why is it negative?
           !---------------------------------------
           if ( jk == kcbot(jl) ) then
-
+           IF(icu_zoentr.eq.1)THEN
             zoentr(jl) = -entorg*(min(1.,pqen(jl,jk)/pqsen(jl,jk)) - &
                          1.)*(pgeoh(jl,jk)-pgeoh(jl,jk+1))*zrg
+           ENDIF
+           IF(icu_zoentr.eq.2)THEN
+            zoentr(jl) = (c1+d1*(1.0-min(1.,pqen(jl,jk)/pqsen(jl,jk))))* &  !shin
+                    (pgeoh(jl,jk)-pgeoh(jl,jk+1))*zrg                                  !shin
+           ENDIF
             zoentr(jl) = min(0.4,zoentr(jl))*pmfu(jl,jk+1)
           end if
           !---------------------------------------
@@ -2467,10 +2475,16 @@ contains
                 ikb = kcbot(jl)
                 ! zoentr is overwritten, but not used until
                 ! the next jk level in the loop (ICON comment)
-                zoentr(jl) = entorg*(0.3-(min(1.,pqen(jl,jk-1) /    &
+                IF(icu_zoentr.eq.1)THEN
+                 zoentr(jl) = entorg*(0.3-(min(1.,pqen(jl,jk-1) /    &
                   pqsen(jl,jk-1))-1.))*(pgeoh(jl,jk-1)-pgeoh(jl,jk)) * &
                   zrg*min(1.,pqsen(jl,jk)/pqsen(jl,ikb))**3
-
+                ENDIF
+                IF(icu_zoentr.eq.2)THEN
+                 zoentr(jl) = ( c1*(min(1.,pqsen(jl,jk)/pqsen(jl,ikb))**2) &  !shin
+                  + d1*(1.0-min(1.,pqen(jl,jk-1)/pqsen(jl,jk-1)))*(min(1.,pqsen(jl,jk)/pqsen(jl,ikb))**3))* & !shin
+                    (pgeoh(jl,jk-1)-pgeoh(jl,jk))*zrg            !shin
+                ENDIF
                 zoentr(jl) = min(0.4,zoentr(jl))*pmfu(jl,jk)
               else
                 zoentr(jl) = 0.
