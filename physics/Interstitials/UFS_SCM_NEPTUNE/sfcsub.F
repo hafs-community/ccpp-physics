@@ -3093,8 +3093,11 @@
               enddo
             enddo
           else
-            do i=1,imax
-              data(imax-i+1,jj) = work(i,j)
+            do j=1,jmax
+              jj = jmax - j + 1
+              do i=1,imax
+                data(imax-i+1,jj) = work(i,j)
+              enddo
             enddo
           endif
         else
@@ -7944,7 +7947,7 @@ cjfe
                   ! points.  so for efficiency, don't have fixrdc try to
                   ! find a value at landice points as defined by the vet type (vet).
               allocate(slmask_noice(len))
-              slmask_noice=1.0
+              slmask_noice = slmskl
               do i = 1, len
                 if (nint(vet(i)) < 1 .or.
      &              nint(vet(i)) == landice_cat) then
