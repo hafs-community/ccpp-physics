@@ -320,7 +320,6 @@
 
       real(kind=kind_phys) qice(im,km),qliq(im,km)
 
-!Variable Lmax----
       real(kind=kind_phys) vlmax(im,km),wind10(im),vlm
 
 !PCC_CANOPY------------------------------------
@@ -767,19 +766,16 @@
          dw2  = (u1(i,k)-u1(i,k+1))**2
      &        + (v1(i,k)-v1(i,k+1))**2
          shr2(i,k) = max(dw2,dw2min)*rdz*rdz
-         
-!Variable Lmax
          vlmax(i,k)=rlmx
          if(rlmx < 0) then
-           tem=sqrt(u1(i,k)**2+v1(i,k)**2)    
-           tem1=sqrt(u1(i,k+1)**2+v1(i,k+1)**2) 
+           tem=sqrt(u1(i,k)**2+v1(i,k)**2)
+           tem1=sqrt(u1(i,k+1)**2+v1(i,k+1)**2)
            tem=0.5*(tem+tem1) ! mean wind speed
            vlmax(i,k)=abs(rlmx)*tem/sqrt(shr2(i,k))
            tem = (wind10(i)/17.5)**0.1
            tem = max(tem,0.5)
            vlmax(i,k)=vlmax(i,k)*tem
          endif
-
       enddo
       enddo
 !
@@ -1416,32 +1412,26 @@
 ! Following Rodier et. al (2017), environmental wind shear effect on
 !   mixing length was included.
 !
-!Variable Lmax
           vlm=rlmx
           if (elmx < 0) then
             vlm=abs(elmx)*min(hpbl(i),2000.0)                  ! below PBLH
             vlm=max(vLm,10.0)
             if (k > kpbl(i)) vlm=min(vlmax(i,k),1.0/rdzt(i,k)) ! above PBLH
           endif
-!          
+!
           ptem2 = min(zlup,zldn)
           rlam(i,k) = elmfac * ptem2
           rlam(i,k) = max(rlam(i,k), tem1)
-!          rlam(i,k) = min(rlam(i,k), rlmx)
-!Variable Lmax
           if (rlmx > 0) then
             rlam(i,k) = min(rlam(i,k), rlmx)
           else
             rlam(i,k) = min(rlam(i,k), vlm)
           endif
-
 !
           ptem2 = sqrt(zlup*zldn)
           ele(i,k) = elefac * ptem2
           ele(i,k) = max(ele(i,k), tem1)
           elmh(i,k)= elmhfac * ele(i,k)
-!          ele(i,k) = min(ele(i,k), elmx)
-!Varying Lmax
           if (elmx > 0) then
             ele(i,k) = min(ele(i,k), elmx)
           else
@@ -3090,16 +3080,18 @@ c
 !           dvsfc(i) = dvsfc(i)+conw*del(i,k)*vtend
          enddo
       enddo
-      do i = 1,im
-        if(.not. use_oceanuv) then
-          dusfc(i) = -1.*rho_a(i)*stress(i)*u1(i,1)/spd1(i)
-          dvsfc(i) = -1.*rho_a(i)*stress(i)*v1(i,1)/spd1(i)
-        else if (use_oceanuv) then
+      if (use_oceanuv) then
+        do i = 1,im
           spd1_m=sqrt( (u1(i,1)-usfco(i))**2+(v1(i,1)-vsfco(i))**2 )
           dusfc(i) = -1.*rho_a(i)*stress(i)*(u1(i,1)-usfco(i))/spd1_m
           dvsfc(i) = -1.*rho_a(i)*stress(i)*(v1(i,1)-vsfco(i))/spd1_m
-        endif
-      enddo
+        enddo
+      else
+        do i = 1,im
+          dusfc(i) = -1.*rho_a(i)*stress(i)*u1(i,1)/spd1(i)
+          dvsfc(i) = -1.*rho_a(i)*stress(i)*v1(i,1)/spd1(i)
+        enddo
+      endif
 !
       if(ldiag3d .and. .not. gen_tend) then
         idtend = dtidx(index_of_x_wind,index_of_process_pbl)

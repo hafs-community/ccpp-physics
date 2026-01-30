@@ -138,11 +138,9 @@
       real(kind=kind_phys), intent(in) :: clam,  c0s,  c1,              &
      &                     betal,   betas,   asolfac,                   &
      &                     evef,  pgcon
+      real(kind_phys), intent(in) :: cat_adj_deep
       character(len=*), intent(out) :: errmsg
       integer,          intent(out) :: errflg
-
-      ! for HAFS
-      real(kind_phys),           intent(in) :: cat_adj_deep
 !
 !------local variables
       integer              i, indx, jmn, k, kk, km1, n
@@ -1114,8 +1112,8 @@ c
           if(cnvflg(i).and.
      &      (k > kbcon(i) .and. k < kmax(i))) then
               tem = qeso(i,k)/qeso(i,kbcon(i))
-              fent1(i,k) = tem**2
-              fent2(i,k) = tem**3
+              fent1(i,k) = min(tem**2, 3.0)
+              fent2(i,k) = min(tem**3, 5.2)
           endif
         enddo
       enddo
@@ -1677,9 +1675,9 @@ c
       if(totflg) return
 !!
 c
-c  estimate the onvective overshooting as the level
+c  Estimate the convective overshooting as the level
 c    where the [aafac * cloud work function] becomes zero,
-c    which is the final cloud top
+c    which is the final cloud top.
 c
 !> - Continue calculating the cloud work function past the point of neutral buoyancy to represent overshooting according to Han and Pan (2011) \cite han_and_pan_2011 . Convective overshooting stops when \f$ cA_u < 0\f$ where \f$c\f$ is currently 10%, or when 10% of the updraft cloud work function has been consumed by the stable buoyancy force.
       do i = 1, im
@@ -2957,7 +2955,6 @@ c
            tauadv = gdx(i) / umean(i)
            advfac(i) = tauadv / dtconv(i)
            advfac(i) = min(cat_adj_deep*advfac(i), 1.)
-           !advfac(i) = min(0.85*advfac(i), 1.)  !shin
         endif
       enddo
       
