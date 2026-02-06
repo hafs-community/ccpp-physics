@@ -81,6 +81,11 @@ get_filename_component(LOCAL_CURRENT_SOURCE_DIR ${FULL_PATH_TO_CMAKELISTS} DIREC
 
 #------------------------------------------------------------------------------
 
+# Special Thompson MP related fast build options
+SET_SOURCE_FILES_PROPERTIES(${LOCAL_CURRENT_SOURCE_DIR}/physics/MP/Thompson/module_mp_thompson.F90
+                            PROPERTIES
+                            COMPILE_OPTIONS "-fp-model fast;-fprotect-parens;-fimf-precision=high")
+
 # List of files that should be compiled with RTE-RRTMGP compilation flags
 set(SCHEMES_RTERRTMGP ${LOCAL_CURRENT_SOURCE_DIR}/physics/Radiation/RRTMGP/rte-rrtmgp/gas-optics/mo_gas_optics.F90
                        ${LOCAL_CURRENT_SOURCE_DIR}/physics/Radiation/RRTMGP/rte-rrtmgp/gas-optics/mo_gas_optics_constants.F90
@@ -114,6 +119,13 @@ set(SCHEMES_OPENMP_OFF ${SCHEMES_RTERRTMGP})
 
 # List of files that need to be compiled with different precision
 set(SCHEMES_DYNAMICS)
+
+# Special Thompson MP related fast build options
+if(${LOCAL_CURRENT_SOURCE_DIR}/physics/MP/Thompson/module_mp_thompson.F90 IN_LIST SCHEMES)
+  SET_SOURCE_FILES_PROPERTIES(${LOCAL_CURRENT_SOURCE_DIR}/physics/MP/Thompson/module_mp_thompson.F90
+                              PROPERTIES
+                              COMPILE_OPTIONS "-fp-model=fast;-fprotect-parens;-fimf-precision=high")
+endif()
 
 if(${LOCAL_CURRENT_SOURCE_DIR}/physics/MP/GFDL/fv_sat_adj.F90 IN_LIST SCHEMES)
   list(APPEND SCHEMES_DYNAMICS ${LOCAL_CURRENT_SOURCE_DIR}/physics/MP/GFDL/fv_sat_adj.F90)
@@ -185,8 +197,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND (${CMAKE_Fortran_COMPILER_ID} STREQUA
   foreach(SCHEME_NAME IN LISTS SCHEME_NAMES_NO_OPTIMIZATION)
     set(SCHEMES_TMP ${SCHEMES})
     # Need to determine the name of the scheme with its path
-     list(FILTER SCHEMES_TMP INCLUDE REGEX "(${SCHEME_NAME}$|RRTMGP)")
-
+    list(FILTER SCHEMES_TMP INCLUDE REGEX "(${SCHEME_NAME}$|RRTMGP)")
     SET_SOURCE_FILES_PROPERTIES(${SCHEMES_TMP}
                                 APPEND_STRING PROPERTY COMPILE_FLAGS " ${CMAKE_Fortran_FLAGS_PHYSICS} ${OpenMP_Fortran_FLAGS} -O0")
   endforeach()
