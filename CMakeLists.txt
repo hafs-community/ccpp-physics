@@ -197,13 +197,17 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND (${CMAKE_Fortran_COMPILER_ID} STREQUA
   foreach(SCHEME_NAME IN LISTS SCHEME_NAMES_NO_OPTIMIZATION)
     set(SCHEMES_TMP ${SCHEMES})
     # Need to determine the name of the scheme with its path
-    list(FILTER SCHEMES_TMP INCLUDE REGEX "(${SCHEME_NAME}$|RRTMGP)")
+    list(FILTER SCHEMES_TMP INCLUDE REGEX ".*${SCHEME_NAME}$")
     SET_SOURCE_FILES_PROPERTIES(${SCHEMES_TMP}
                                 APPEND_STRING PROPERTY COMPILE_FLAGS " ${CMAKE_Fortran_FLAGS_PHYSICS} ${OpenMP_Fortran_FLAGS} -O0")
   endforeach()
 endif()
 #------------------------------------------------------------------------------
-
+# Compile "rrtmgp_sw_main.F90" with "-O0" to address reproducibilty in HAFS
+SET_SOURCE_FILES_PROPERTIES(
+  ${LOCAL_CURRENT_SOURCE_DIR}/physics/Radiation/RRTMGP/rrtmgp_sw_main.F90
+  APPEND_STRING PROPERTY COMPILE_FLAGS "${CMAKE_Fortran_FLAGS_PHYSICS} ${OpenMP_Fortran_FLAGS} -O0")
+#------------------------------------------------------------------------------
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_INSTALL_INCLUDEDIR})
 
 add_library(ccpp_physics STATIC ${SCHEMES} ${SCHEMES_RTERRTMGP} ${SCHEMES_OPENMP_OFF} ${SCHEMES_DYNAMICS} ${CAPS})
